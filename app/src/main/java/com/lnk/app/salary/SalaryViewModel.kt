@@ -57,17 +57,28 @@ class SalaryViewModel(
         }
     }
 
-    fun addDailySales(entry: DailySales) {
+    fun addDailySales(entry: DailySales): Boolean {
+        val normalizedDate = entry.date.trim()
+        if (normalizedDate.isBlank()) {
+            _uiState.update { it.copy(errorMessage = "날짜를 확인해 주세요.") }
+            return false
+        }
+        val hasDuplicateDate = _uiState.value.dailySales.any { it.date.trim() == normalizedDate }
+        if (hasDuplicateDate) {
+            _uiState.update { it.copy(errorMessage = "같은 날짜는 한 번만 등록할 수 있습니다.") }
+            return false
+        }
+
         val entryWithUser = if (entry.userId.isBlank() && !userId.isNullOrBlank()) {
-            entry.copy(userId = userId)
+            entry.copy(userId = userId, date = normalizedDate)
         } else {
-            entry
+            entry.copy(date = normalizedDate)
         }
         val updated = _uiState.value.dailySales + entryWithUser
         _uiState.update { it.copy(dailySales = updated, errorMessage = null) }
         recalculate(_uiState.value.setting, updated)
 
-        val currentUserId = userId ?: return
+        val currentUserId = userId ?: return true
         viewModelScope.launch {
             runCatching {
                 firestoreRepository.addDailySales(entryWithUser.copy(userId = currentUserId))
@@ -75,6 +86,7 @@ class SalaryViewModel(
                 _uiState.update { it.copy(errorMessage = error.message) }
             }
         }
+        return true
     }
 
     fun removeDailySales(index: Int) {
@@ -83,6 +95,10 @@ class SalaryViewModel(
         }
         _uiState.update { it.copy(dailySales = updated, errorMessage = null) }
         recalculate(_uiState.value.setting, updated)
+    }
+
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
     }
 
     private fun recalculate(setting: SalarySetting, dailySales: List<DailySales>) {

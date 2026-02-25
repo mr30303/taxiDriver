@@ -61,4 +61,8 @@ class AuthViewModel(
             _uiState.update { it.copy(userId = null, errorMessage = null) }
         }
     }
+
+    fun clearErrorMessage() {
+        _uiState.update { it.copy(errorMessage = null) }
+    }
 }
