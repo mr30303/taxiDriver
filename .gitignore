@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+**/build/
+
+# Local config
+local.properties
+
+# IDE
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Android/NDK
+.externalNativeBuild/
+.cxx/
+captures/
+
+# Firebase (keep local)
+app/google-services.json
