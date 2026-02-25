@@ -9,15 +9,30 @@ local.properties
 # IDE
 .idea/
 *.iml
+misc.xml
+deploymentTargetDropDown.xml
+render.experimental.xml
+
+# Logs / profiling
+*.log
+*.hprof
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Android/NDK
+# Android/NDK/artifacts
 .externalNativeBuild/
 .cxx/
 captures/
+*.aab
+*.apk
+output-metadata.json
+
+# Signing
+*.jks
+*.keystore
 
 # Firebase (keep local)
+google-services.json
 app/google-services.json
