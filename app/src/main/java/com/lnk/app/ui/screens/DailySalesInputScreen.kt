@@ -22,10 +22,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -86,7 +90,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DailySalesInputScreen(
-    salaryViewModel: SalaryViewModel
+    salaryViewModel: SalaryViewModel,
+    onBack: () -> Unit
 ) {
     val uiState by salaryViewModel.uiState.collectAsState()
     val dailySales = uiState.dailySales
@@ -122,10 +127,38 @@ fun DailySalesInputScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("일 매출 입력", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
-            )
+            Column {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("매출 관리", fontWeight = FontWeight.ExtraBold)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로가기")
+                        }
+                    },
+                    actions = {
+                        Column(
+                            modifier = Modifier.padding(end = 16.dp),
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            Text("이번 달 합계", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                            Text("${formatWithComma(selectedMonthIncome)}원", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold, color = Color(0xFF2E7D32))
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                )
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(Color(0xFFEEEEEE))
+                )
+            }
         }
     ) { paddingValues ->
         Column(
@@ -133,23 +166,31 @@ fun DailySalesInputScreen(
                 .fillMaxSize()
                 .background(Color(0xFFF8F8F8))
                 .padding(paddingValues)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = 20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            Spacer(Modifier.height(4.dp))
+            
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
+                shape = RoundedCornerShape(24.dp),
                 colors = CardDefaults.cardColors(containerColor = Color.White),
                 elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
             ) {
                 Column(
-                    modifier = Modifier.padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    modifier = Modifier.padding(20.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFFC107))
-                        Spacer(Modifier.width(8.dp))
-                        Text("오늘의 운행 기록", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                        Surface(
+                            color = Color(0xFFFFF9C4),
+                            shape = CircleShape,
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.padding(8.dp))
+                        }
+                        Spacer(Modifier.width(12.dp))
+                        Text("운행 기록하기", fontWeight = FontWeight.Bold, fontSize = 18.sp)
                     }
 
                     DateSelectorField(
@@ -158,7 +199,7 @@ fun DailySalesInputScreen(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                         OutlinedTextField(
                             value = amount,
                             onValueChange = { amount = it.filter(Char::isDigit) },
@@ -192,7 +233,7 @@ fun DailySalesInputScreen(
                     Column {
                         Text("근무 형태", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
                         Row(
-                            modifier = Modifier.padding(top = 4.dp),
+                            modifier = Modifier.padding(top = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp)
                         ) {
                             WorkType.values().forEach { type ->
@@ -200,6 +241,7 @@ fun DailySalesInputScreen(
                                     selected = workType == type,
                                     onClick = { workType = type },
                                     label = { Text(type.label) },
+                                    shape = RoundedCornerShape(8.dp),
                                     colors = FilterChipDefaults.filterChipColors(
                                         selectedContainerColor = Color(0xFFFFC107),
                                         selectedLabelColor = Color.Black
@@ -213,14 +255,16 @@ fun DailySalesInputScreen(
                         verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
                             .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
                             .clickable { hasAccident = !hasAccident }
+                            .padding(vertical = 4.dp)
                     ) {
                         Checkbox(
                             checked = hasAccident,
                             onCheckedChange = { hasAccident = it },
                             colors = CheckboxDefaults.colors(checkedColor = Color.Red)
                         )
-                        Text("운행 중 사고 발생", color = if (hasAccident) Color.Red else Color.Black)
+                        Text("운행 중 사고 발생", style = MaterialTheme.typography.bodyMedium, color = if (hasAccident) Color.Red else Color.Black)
                     }
 
                     Button(
@@ -245,48 +289,58 @@ fun DailySalesInputScreen(
                         enabled = amount.isNotBlank() && selectedDate != null && !selectedDate.isAfter(LocalDate.now()),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(50.dp),
-                        shape = RoundedCornerShape(12.dp),
+                            .height(54.dp),
+                        shape = RoundedCornerShape(16.dp),
                         colors = ButtonDefaults.buttonColors(
                             containerColor = Color(0xFFFFC107),
                             contentColor = Color.Black
                         )
                     ) {
                         Icon(Icons.Default.Add, contentDescription = null)
-                        Spacer(Modifier.width(4.dp))
-                        Text("기록 추가하기", fontWeight = FontWeight.Bold)
+                        Spacer(Modifier.width(8.dp))
+                        Text("기록 저장하기", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                     }
                 }
             }
 
+            // 내역 섹션 헤더
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Bottom
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "${selectedMonth.year}년 ${selectedMonth.monthValue}월 운행 내역",
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+                    text = "${selectedMonth.monthValue}월 운행 내역",
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 18.sp,
+                    color = Color.DarkGray
                 )
-                Text(
-                    "합계: ${formatWithComma(selectedMonthIncome)}원",
-                    fontWeight = FontWeight.Bold,
-                    color = Color(0xFF2E7D32)
-                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Surface(
+                    color = Color.LightGray.copy(alpha = 0.2f),
+                    shape = CircleShape
+                ) {
+                    Text(
+                        text = "${selectedMonthSales.size}",
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 2.dp),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
             }
 
             if (selectedMonthSales.isEmpty()) {
-                Text(
-                    text = "${selectedMonth.year}년 ${selectedMonth.monthValue}월 운행 내역이 없습니다.",
-                    color = Color.Gray,
-                    style = MaterialTheme.typography.bodyMedium
-                )
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(
+                        text = "등록된 운행 내역이 없습니다.",
+                        color = Color.LightGray,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                }
             } else {
                 LazyColumn(
                     modifier = Modifier.weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(bottom = 16.dp)
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 24.dp)
                 ) {
                     itemsIndexed(
                         items = selectedMonthSales,
@@ -522,7 +576,7 @@ private fun DailySalesCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -534,7 +588,7 @@ private fun DailySalesCard(
         ) {
             Box(
                 modifier = Modifier
-                    .size(40.dp)
+                    .size(44.dp)
                     .clip(CircleShape)
                     .background(Color(0xFFF5F5F5)),
                 contentAlignment = Alignment.Center
@@ -542,36 +596,57 @@ private fun DailySalesCard(
                 Text("${index + 1}", fontWeight = FontWeight.Bold, color = Color.Gray)
             }
 
-            Spacer(Modifier.width(12.dp))
+            Spacer(Modifier.width(16.dp))
 
             Column(modifier = Modifier.weight(1f)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(item.date, fontWeight = FontWeight.Bold, fontSize = 15.sp)
+                    Text(item.date, fontWeight = FontWeight.ExtraBold, fontSize = 16.sp, color = Color(0xFF333333))
                     Spacer(Modifier.width(8.dp))
                     Surface(
                         color = Color(0xFFE3F2FD),
-                        shape = RoundedCornerShape(4.dp)
+                        shape = RoundedCornerShape(6.dp)
                     ) {
                         Text(
                             item.workType.label,
-                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp),
                             style = MaterialTheme.typography.labelSmall,
-                            color = Color(0xFF1976D2)
+                            color = Color(0xFF1976D2),
+                            fontWeight = FontWeight.Bold
                         )
                     }
                 }
-                Text(
-                    text = "실입금 ${formatWithComma(item.amount)}원 · 톨 ${formatWithComma(item.tollFee)}원",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = Color.DarkGray
-                )
+                Spacer(Modifier.height(4.dp))
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        text = "실입금 ${formatWithComma(item.amount)}원",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF2E7D32)
+                    )
+                    Text(
+                        text = " · 톨게이트 ${formatWithComma(item.tollFee)}원",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color.Gray
+                    )
+                }
                 if (item.hasAccident) {
-                    Text("사고 발생", color = Color.Red, style = MaterialTheme.typography.labelSmall)
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.Info, contentDescription = null, tint = Color.Red, modifier = Modifier.size(12.dp))
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("사고 발생 기록됨", color = Color.Red, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
 
-            IconButton(onClick = onDelete) {
-                Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color.LightGray)
+            IconButton(
+                onClick = onDelete,
+                modifier = Modifier
+                    .size(36.dp)
+                    .clip(CircleShape)
+                    .background(Color(0xFFFFF1F1))
+            ) {
+                Icon(Icons.Default.Delete, contentDescription = "삭제", tint = Color(0xFFFF5252), modifier = Modifier.size(18.dp))
             }
         }
     }

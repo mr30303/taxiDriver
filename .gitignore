@@ -36,3 +36,4 @@ output-metadata.json
 # Firebase (keep local)
 google-services.json
 app/google-services.json
+*firebase-adminsdk-*.json

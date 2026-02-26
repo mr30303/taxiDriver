@@ -17,6 +17,14 @@ android {
         targetSdk = 36
         versionCode = 1
         versionName = "0.1.0"
+        val naverMapNcpKeyId = (project.findProperty("NAVER_MAP_NCP_KEY_ID") as String?) ?: ""
+        val naverMapNcpKey = (project.findProperty("NAVER_MAP_NCP_KEY") as String?) ?: ""
+        val kakaoRestApiKey = (project.findProperty("KAKAO_REST_API_KEY") as String?) ?: ""
+
+        manifestPlaceholders["NAVER_MAP_NCP_KEY_ID"] = naverMapNcpKeyId
+        buildConfigField("String", "NAVER_MAP_NCP_KEY_ID", "\"$naverMapNcpKeyId\"")
+        buildConfigField("String", "NAVER_MAP_NCP_KEY", "\"$naverMapNcpKey\"")
+        buildConfigField("String", "KAKAO_REST_API_KEY", "\"$kakaoRestApiKey\"")
     }
 
     buildTypes {
@@ -41,6 +49,7 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
@@ -56,12 +65,15 @@ dependencies {
     implementation("androidx.compose.ui:ui-tooling-preview")
     implementation("androidx.compose.foundation:foundation")
     implementation("androidx.compose.material3:material3")
+    implementation("androidx.compose.material:material-icons-extended")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.7.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.7.0")
     implementation("androidx.navigation:navigation-compose:2.7.7")
     implementation("com.google.android.material:material:1.12.0")
+    implementation("com.google.android.gms:play-services-location:21.2.0")
     implementation("com.kizitonwose.calendar:compose:2.5.4")
+    implementation("com.naver.maps:map-sdk:3.23.1")
     implementation(platform("com.google.firebase:firebase-bom:33.5.1"))
     implementation("com.google.firebase:firebase-auth-ktx")
     implementation("com.google.firebase:firebase-firestore-ktx")

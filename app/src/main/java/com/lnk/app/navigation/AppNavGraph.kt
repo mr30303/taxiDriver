@@ -1,6 +1,7 @@
 package com.lnk.app.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -21,17 +22,23 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.lnk.app.auth.AuthViewModel
 import com.lnk.app.auth.AuthViewModelFactory
+import com.lnk.app.comment.CommentViewModel
+import com.lnk.app.comment.CommentViewModelFactory
 import com.lnk.app.data.repository.AuthRepositoryImpl
 import com.lnk.app.data.repository.FirestoreRepositoryImpl
 import com.lnk.app.salary.SalaryViewModel
 import com.lnk.app.salary.SalaryViewModelFactory
+import com.lnk.app.toilet.ToiletViewModel
+import com.lnk.app.toilet.ToiletViewModelFactory
 import com.lnk.app.ui.screens.AppStartScreen
+import com.lnk.app.ui.screens.CommentScreen
 import com.lnk.app.ui.screens.DailySalesInputScreen
 import com.lnk.app.ui.screens.LoginScreen
 import com.lnk.app.ui.screens.MainScreen
 import com.lnk.app.ui.screens.SalaryResultScreen
 import com.lnk.app.ui.screens.SalarySettingScreen
 import com.lnk.app.ui.screens.SignUpScreen
+import com.lnk.app.ui.screens.ToiletMapScreen
 
 @Composable
 fun AppNavGraph(
@@ -45,6 +52,17 @@ fun AppNavGraph(
     val salaryViewModel: SalaryViewModel = viewModel(
         factory = SalaryViewModelFactory(authRepository, firestoreRepository)
     )
+    val toiletViewModel: ToiletViewModel = viewModel(
+        factory = ToiletViewModelFactory(authRepository, firestoreRepository)
+    )
+    val commentViewModel: CommentViewModel = viewModel(
+        factory = CommentViewModelFactory(authRepository, firestoreRepository)
+    )
+
+    LaunchedEffect(authUiState.userId) {
+        toiletViewModel.onAuthUserChanged(authUiState.userId)
+        commentViewModel.onAuthUserChanged(authUiState.userId)
+    }
 
     NavHost(navController = navController, startDestination = startDestination) {
         composable(Route.AppStart.route) {
@@ -86,29 +104,55 @@ fun AppNavGraph(
         }
         composable(Route.Main.route) {
             MainScreen(
-                onNavigate = { route -> navController.navigate(route) }
+                onNavigate = { route -> navController.navigate(route) },
+                onLogout = {
+                    authViewModel.signOut()
+                    navController.navigate(Route.Login.route) {
+                        popUpTo(Route.Main.route) { inclusive = true }
+                    }
+                }
             )
         }
         composable(Route.SalarySetting.route) {
-            SalarySettingScreen(salaryViewModel = salaryViewModel)
+            SalarySettingScreen(
+                salaryViewModel = salaryViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.DailySalesInput.route) {
-            DailySalesInputScreen(salaryViewModel = salaryViewModel)
+            DailySalesInputScreen(
+                salaryViewModel = salaryViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.SalaryResult.route) {
-            SalaryResultScreen(salaryViewModel = salaryViewModel)
+            SalaryResultScreen(
+                salaryViewModel = salaryViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.ToiletMap.route) {
-            PlaceholderScreen(title = "Toilet Map", onBack = { navController.popBackStack() })
+            ToiletMapScreen(
+                toiletViewModel = toiletViewModel,
+                onBack = { navController.popBackStack() }
+            )
         }
         composable(Route.ToiletDetail.route) {
             PlaceholderScreen(title = "Toilet Detail", onBack = { navController.popBackStack() })
         }
-        composable(Route.AddToilet.route) {
-            PlaceholderScreen(title = "Add Toilet", onBack = { navController.popBackStack() })
-        }
         composable(Route.Comment.route) {
-            PlaceholderScreen(title = "Comment", onBack = { navController.popBackStack() })
+            CommentScreen(
+                commentViewModel = commentViewModel,
+                onBack = { navController.popBackStack() },
+                onOpenToilet = { summary ->
+                    toiletViewModel.prepareToiletFocus(
+                        toiletId = summary.toiletId,
+                        latitude = summary.latitude,
+                        longitude = summary.longitude
+                    )
+                    navController.navigate(Route.ToiletMap.route)
+                }
+            )
         }
     }
 }

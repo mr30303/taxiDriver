@@ -2,6 +2,7 @@ package com.lnk.app.data.repository
 
 import com.lnk.app.data.model.Comment
 import com.lnk.app.data.model.DailySales
+import com.lnk.app.data.model.HiddenToiletPreference
 import com.lnk.app.data.model.SalarySetting
 import com.lnk.app.data.model.Toilet
 
@@ -13,13 +14,27 @@ interface FirestoreRepository {
 
     suspend fun addToilet(toilet: Toilet): String
     suspend fun getToilets(): List<Toilet>
+    suspend fun getHiddenToiletPreference(userId: String): HiddenToiletPreference
+    suspend fun saveHiddenToiletPreference(userId: String, preference: HiddenToiletPreference)
+    suspend fun getMasterRestroomsByLatRange(
+        minLat: Double,
+        maxLat: Double,
+        limit: Int = 2000
+    ): List<Toilet>
+    suspend fun getToiletsByIds(toiletIds: List<String>): Map<String, Toilet>
     suspend fun getToilet(toiletId: String): Toilet?
     suspend fun updateToiletReactions(
         toiletId: String,
         likeCount: Int,
-        dislikeCount: Int
+        dislikeCount: Int,
+        likedUserIds: List<String>,
+        dislikedUserIds: List<String>,
+        source: String
     )
 
+    suspend fun getRecentComments(limit: Int = 80): List<Comment>
     suspend fun addComment(comment: Comment): String
     suspend fun getComments(toiletId: String): List<Comment>
+    suspend fun updateComment(commentId: String, content: String, updatedAt: Long)
+    suspend fun deleteComment(commentId: String)
 }

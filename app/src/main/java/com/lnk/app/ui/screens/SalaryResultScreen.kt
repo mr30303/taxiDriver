@@ -22,14 +22,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
@@ -38,6 +32,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -55,6 +50,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -71,23 +67,32 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalaryResultScreen(
-    salaryViewModel: SalaryViewModel
+    salaryViewModel: SalaryViewModel,
+    onBack: () -> Unit
 ) {
     val uiState by salaryViewModel.uiState.collectAsState()
     val currentMonth = remember { YearMonth.now() }
 
     val availableMonths = remember(uiState.dailySales, currentMonth) {
-        val months = uiState.dailySales
+        val months: List<YearMonth> = uiState.dailySales
             .mapNotNull { it.date.toLocalDateOrNull() }
             .map { YearMonth.from(it) }
             .distinct()
             .sortedDescending()
-        if (months.isEmpty()) listOf(currentMonth)
-        else if (currentMonth in months) months else listOf(currentMonth) + months
+        
+        if (months.isEmpty()) {
+            listOf(currentMonth)
+        } else if (months.contains(currentMonth)) {
+            months
+        } else {
+            listOf(currentMonth) + months
+        }
     }
 
     var selectedMonthValue by rememberSaveable { mutableStateOf(currentMonth.toString()) }
-    val selectedMonth = selectedMonthValue.toYearMonthOrNull() ?: availableMonths.first()
+    val selectedMonth = remember(selectedMonthValue, availableMonths) {
+        selectedMonthValue.toYearMonthOrNull() ?: availableMonths.first()
+    }
 
     LaunchedEffect(availableMonths) {
         if (availableMonths.none { it.toString() == selectedMonthValue }) {
@@ -107,10 +112,24 @@ fun SalaryResultScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("급여 분석 리포트", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
-            )
+            Column {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Assessment, contentDescription = null, tint = Color(0xFF1E88E5), modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("급여 분석", fontWeight = FontWeight.ExtraBold)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로가기")
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(containerColor = Color.White)
+                )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFEEEEEE)))
+            }
         }
     ) { paddingValues ->
         Column(
@@ -119,8 +138,8 @@ fun SalaryResultScreen(
                 .background(Color(0xFFF8F8F8))
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
             MonthSelector(
                 selectedMonth = selectedMonth,
@@ -144,17 +163,19 @@ fun SalaryResultScreen(
                         )
                         Spacer(Modifier.height(16.dp))
                         Text(
-                            "${selectedMonth.year}년 ${selectedMonth.monthValue}월 운행 데이터가 없습니다.",
-                            color = Color.Gray
+                            "${selectedMonth.year}년 ${selectedMonth.monthValue}월 데이터가 없습니다.",
+                            color = Color.Gray,
+                            fontWeight = FontWeight.Medium
                         )
                     }
                 }
                 return@Scaffold
             }
 
+            // 하이라이트 결과 카드
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(24.dp),
+                shape = RoundedCornerShape(32.dp),
                 colors = CardDefaults.cardColors(containerColor = Color(0xFF1A1A1A)),
                 elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
             ) {
@@ -163,90 +184,96 @@ fun SalaryResultScreen(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "${selectedMonth.year}년 ${selectedMonth.monthValue}월 예상 월급 (세전)",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp
+                        text = "${selectedMonth.monthValue}월 예상 월급 (세전)",
+                        color = Color.White.copy(alpha = 0.6f),
+                        style = MaterialTheme.typography.labelLarge
                     )
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(12.dp))
                     Text(
                         text = "${formatWithComma(monthlyResult.totalPretax)}원",
                         color = Color(0xFFFFC107),
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
+                        fontSize = 36.sp,
+                        fontWeight = FontWeight.ExtraBold
                     )
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
                     HorizontalDivider(color = Color.White.copy(alpha = 0.1f))
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(Modifier.height(20.dp))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        horizontalArrangement = Arrangement.SpaceEvenly
                     ) {
                         ResultSummaryItem(
-                            label = "운행 일수",
+                            label = "운행",
                             value = "${monthlySales.size}일",
                             icon = Icons.Default.DateRange
                         )
+                        Box(modifier = Modifier.width(1.dp).height(24.dp).background(Color.White.copy(alpha = 0.1f)))
                         ResultSummaryItem(
-                            label = "사고 건수",
+                            label = "사고",
                             value = "${monthlySales.count { it.hasAccident }}건",
-                            icon = Icons.Default.Warning
+                            icon = Icons.Default.Warning,
+                            iconColor = if (monthlySales.any { it.hasAccident }) Color(0xFFFF5252) else Color.White.copy(alpha = 0.5f)
                         )
                     }
                 }
             }
 
             Text(
-                text = "상세 내역",
-                fontWeight = FontWeight.Bold,
+                text = "세부 항목",
+                fontWeight = FontWeight.ExtraBold,
                 fontSize = 18.sp,
+                color = Color(0xFF333333),
                 modifier = Modifier.padding(start = 4.dp)
             )
 
-            DetailResultCard(
-                title = "월 실입금 합계",
-                amount = monthlyResult.monthlyIncome,
-                icon = Icons.Default.ShoppingCart,
-                iconColor = Color(0xFF4CAF50)
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                DetailResultCard(
+                    title = "월 실입금 합계",
+                    amount = monthlyResult.monthlyIncome,
+                    icon = Icons.Default.AccountBalance,
+                    iconColor = Color(0xFF4CAF50)
+                )
 
-            DetailResultCard(
-                title = "월 톨게이트비 합계",
-                amount = monthlyResult.monthlyTollFee,
-                icon = Icons.Default.Place,
-                iconColor = Color(0xFF2196F3)
-            )
+                DetailResultCard(
+                    title = "월 톨게이트비 합계",
+                    amount = monthlyResult.monthlyTollFee,
+                    icon = Icons.Default.Place,
+                    iconColor = Color(0xFF2196F3)
+                )
+            }
 
             AchievementRateCard(
                 monthlyQuota = uiState.setting.monthlyQuota,
                 monthlyIncome = monthlyResult.monthlyIncome,
-                attendanceDays = monthlySales.count {
-                    it.workType == WorkType.NORMAL || it.workType == WorkType.HOLIDAY
+                attendanceDays = monthlySales.count { sale ->
+                    sale.workType == WorkType.NORMAL || sale.workType == WorkType.HOLIDAY
                 },
                 fullAttendanceDays = uiState.setting.fullAttendanceDays,
                 isFullAttendance = monthlyResult.isFullAttendance
             )
 
+            // 격려 문구 카드
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9C4))
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9))
             ) {
                 Row(
                     modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFBC02D))
+                    Icon(Icons.Default.Info, contentDescription = null, tint = Color(0xFF43A047))
                     Spacer(Modifier.width(12.dp))
                     Text(
-                        text = "수고하셨습니다! 다음 달도 안전운행 하세요.",
+                        text = "이달의 운행 완료! 항상 안전운행 하세요.",
                         style = MaterialTheme.typography.bodyMedium,
-                        color = Color(0xFF5D4037),
-                        fontWeight = FontWeight.Medium
+                        color = Color(0xFF2E7D32),
+                        fontWeight = FontWeight.Bold
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
@@ -261,30 +288,30 @@ private fun MonthSelector(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+        elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
         Column(
-            modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.DateRange, contentDescription = null, tint = Color.Gray, modifier = Modifier.size(16.dp))
-                Spacer(Modifier.width(6.dp))
-                Text("조회 월 선택", style = MaterialTheme.typography.labelMedium, color = Color.Gray)
+                Spacer(Modifier.width(8.dp))
+                Text("정산 월 선택", style = MaterialTheme.typography.labelMedium, color = Color.Gray, fontWeight = FontWeight.Bold)
             }
             
             Box {
                 Surface(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
+                        .clip(RoundedCornerShape(14.dp))
                         .clickable { expanded = true }
                         .border(
                             width = 1.dp,
-                            color = if (expanded) Color(0xFFFFC107) else Color(0xFFE0E0E0),
-                            shape = RoundedCornerShape(12.dp)
+                            color = if (expanded) Color(0xFFFFC107) else Color(0xFFEEEEEE),
+                            shape = RoundedCornerShape(14.dp)
                         ),
                     color = Color.Transparent
                 ) {
@@ -296,7 +323,7 @@ private fun MonthSelector(
                         Text(
                             text = "${selectedMonth.year}년 ${selectedMonth.monthValue}월",
                             style = MaterialTheme.typography.bodyLarge,
-                            fontWeight = FontWeight.Bold,
+                            fontWeight = FontWeight.ExtraBold,
                             color = Color.Black
                         )
                         Icon(
@@ -312,43 +339,24 @@ private fun MonthSelector(
                     expanded = expanded,
                     onDismissRequest = { expanded = false },
                     modifier = Modifier
-                        .fillMaxWidth(0.9f) // 화면 너비에 맞춤
+                        .fillMaxWidth(0.85f)
                         .background(Color.White)
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 4.dp)
                 ) {
                     months.forEach { month ->
                         val isSelected = month == selectedMonth
                         DropdownMenuItem(
                             text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Icon(
-                                        imageVector = Icons.Default.DateRange,
-                                        contentDescription = null,
-                                        tint = if (isSelected) Color(0xFFFFC107) else Color.LightGray,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                    Spacer(Modifier.width(12.dp))
-                                    Text(
-                                        text = "${month.year}년 ${month.monthValue}월",
-                                        style = MaterialTheme.typography.bodyLarge,
-                                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                        color = if (isSelected) Color.Black else Color.DarkGray
-                                    )
-                                }
-                            },
-                            trailingIcon = {
-                                if (isSelected) {
-                                    Icon(Icons.Default.Check, contentDescription = "선택됨", tint = Color(0xFFFFC107))
-                                }
+                                Text(
+                                    text = "${month.year}년 ${month.monthValue}월",
+                                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                                )
                             },
                             onClick = {
                                 onMonthSelected(month)
                                 expanded = false
                             },
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp, vertical = 2.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(if (isSelected) Color(0xFFFFF9C4) else Color.Transparent)
+                            modifier = Modifier.background(if (isSelected) Color(0xFFFFF9C4) else Color.Transparent)
                         )
                     }
                 }
@@ -358,13 +366,18 @@ private fun MonthSelector(
 }
 
 @Composable
-fun ResultSummaryItem(label: String, value: String, icon: ImageVector) {
+fun ResultSummaryItem(
+    label: String, 
+    value: String, 
+    icon: ImageVector,
+    iconColor: Color = Color.White.copy(alpha = 0.5f)
+) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Icon(icon, contentDescription = null, tint = Color.White.copy(alpha = 0.5f), modifier = Modifier.size(16.dp))
-        Spacer(Modifier.width(6.dp))
-        Text(text = label, color = Color.White.copy(alpha = 0.5f), fontSize = 12.sp)
+        Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(16.dp))
         Spacer(Modifier.width(8.dp))
-        Text(text = value, color = Color.White, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+        Text(text = label, color = Color.White.copy(alpha = 0.5f), fontSize = 13.sp)
+        Spacer(Modifier.width(6.dp))
+        Text(text = value, color = Color.White, fontWeight = FontWeight.ExtraBold, fontSize = 15.sp)
     }
 }
 
@@ -377,7 +390,7 @@ fun DetailResultCard(
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
     ) {
@@ -391,20 +404,20 @@ fun DetailResultCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(40.dp)
+                        .size(44.dp)
                         .clip(CircleShape)
                         .background(iconColor.copy(alpha = 0.1f)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(icon, contentDescription = null, tint = iconColor, modifier = Modifier.size(20.dp))
                 }
-                Spacer(Modifier.width(12.dp))
-                Text(text = title, fontWeight = FontWeight.Medium, color = Color.DarkGray)
+                Spacer(Modifier.width(16.dp))
+                Text(text = title, fontWeight = FontWeight.Bold, color = Color(0xFF444444))
             }
             Text(
                 text = "${formatWithComma(amount)}원",
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
                 color = Color.Black
             )
         }
@@ -432,36 +445,26 @@ private fun AchievementRateCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(20.dp),
+        shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
         Column(
-            modifier = Modifier.padding(20.dp),
+            modifier = Modifier.padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(Icons.Default.Star, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
+                Icon(Icons.Default.TrendingUp, contentDescription = null, tint = Color(0xFFFFC107), modifier = Modifier.size(20.dp))
                 Spacer(Modifier.width(8.dp))
                 Text(
-                    text = "목표 달성 현황",
-                    fontWeight = FontWeight.Bold,
+                    text = "목표 및 달성률",
+                    fontWeight = FontWeight.ExtraBold,
                     style = MaterialTheme.typography.titleMedium
                 )
             }
 
-            if (monthlyQuota <= 0L) {
-                Text(
-                    text = "기준금(사납금) 설정이 필요합니다.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = Color.Gray,
-                    modifier = Modifier.padding(vertical = 8.dp)
-                )
-                return@Column
-            }
-
             AchievementGraph(
-                label = "사납금 달성률",
+                label = "사납금 달성",
                 progress = quotaRate,
                 color = Color(0xFFFFC107),
                 currentValue = "${formatWithComma(monthlyIncome)}원",
@@ -469,19 +472,25 @@ private fun AchievementRateCard(
             )
 
             AchievementGraph(
-                label = "만근 달성률",
+                label = "만근 달성",
                 progress = fullAttendanceRate,
                 color = Color(0xFF2196F3),
                 currentValue = "${attendanceDays}일",
                 targetValue = "${fullAttendanceDays}일"
             )
 
-            Text(
-                text = "기준금 만근 판정: ${if (isFullAttendance) "달성" else "미달"} (실입금+인정금 기준)",
-                style = MaterialTheme.typography.bodySmall,
-                color = if (isFullAttendance) Color(0xFF2E7D32) else Color.Gray,
-                modifier = Modifier.padding(top = 4.dp)
-            )
+            Surface(
+                color = if (isFullAttendance) Color(0xFFE8F5E9) else Color(0xFFF5F5F5),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Text(
+                    text = "판정: ${if (isFullAttendance) "만근 달성 (수당 지급 대상)" else "만근 미달"}",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = if (isFullAttendance) Color(0xFF2E7D32) else Color.Gray,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
@@ -495,21 +504,22 @@ fun AchievementGraph(
     targetValue: String
 ) {
     val animatedProgress by animateFloatAsState(
-        targetValue = kotlin.math.min(1f, progress),
-        animationSpec = tween(durationMillis = 1000)
+        targetValue = kotlin.math.min(1.2f, progress), 
+        animationSpec = tween(durationMillis = 1000),
+        label = "AchievementProgress"
     )
 
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = label, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color.DarkGray)
+            Text(text = label, fontWeight = FontWeight.Bold, fontSize = 14.sp, color = Color(0xFF666666))
             Text(
                 text = String.format(Locale.KOREA, "%.1f%%", progress * 100),
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp,
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 18.sp,
                 color = color
             )
         }
@@ -517,18 +527,18 @@ fun AchievementGraph(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(10.dp)
+                .height(12.dp)
                 .clip(CircleShape)
                 .background(Color(0xFFF0F0F0))
         ) {
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(animatedProgress)
+                    .fillMaxWidth(kotlin.math.min(1f, animatedProgress))
                     .fillMaxHeight()
                     .clip(CircleShape)
                     .background(
-                        androidx.compose.ui.graphics.Brush.horizontalGradient(
-                            colors = listOf(color.copy(alpha = 0.7f), color)
+                        Brush.horizontalGradient(
+                            colors = listOf(color.copy(alpha = 0.6f), color)
                         )
                     )
             )
@@ -538,12 +548,11 @@ fun AchievementGraph(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = "현재: $currentValue", fontSize = 11.sp, color = Color.Gray)
-            Text(text = "목표: $targetValue", fontSize = 11.sp, color = Color.Gray)
+            Text(text = "현재 $currentValue", fontSize = 11.sp, color = Color.Gray)
+            Text(text = "목표 $targetValue", fontSize = 11.sp, color = Color.Gray)
         }
     }
 }
 
 private fun String.toLocalDateOrNull(): LocalDate? = runCatching { LocalDate.parse(this) }.getOrNull()
 private fun String.toYearMonthOrNull(): YearMonth? = runCatching { YearMonth.parse(this) }.getOrNull()
-private fun formatPercent(value: Double): String = String.format(Locale.KOREA, "%.1f%%", value)

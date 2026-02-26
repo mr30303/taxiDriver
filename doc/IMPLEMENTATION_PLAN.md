@@ -9,7 +9,7 @@ Status labels: [진행중] / [완료]
 3. Core data models and repository interfaces (핵심 데이터 모델 및 레포지토리 인터페이스) [완료]
 4. Authentication flow and userId contract (인증 플로우 및 userId 계약 고정) [완료]
 5. Salary calculator (급여 계산기) [완료]
-6. Toilet map and sharing (화장실 지도 및 공유)
+6. Toilet map and sharing (화장실 지도 및 공유) [진행중]
 7. Comment system (댓글 시스템)
 
 ## 2) Key Files by Step (단계별 주요 파일)
@@ -48,11 +48,11 @@ Status labels: [진행중] / [완료]
    - DailySalesInputScreen.kt [완료]
    - SalaryResultScreen.kt [완료]
    - SalaryViewModel.kt [완료]
-6. Toilet map and sharing (화장실 지도 및 공유)
-   - ToiletMapScreen.kt
-   - ToiletDetailSheet.kt
-   - AddToiletScreen.kt
-   - ToiletViewModel.kt
+6. Toilet map and sharing (화장실 지도 및 공유) [진행중]
+   - ToiletMapScreen.kt [완료]
+   - ToiletDetailSheet.kt [완료]
+   - AddToiletScreen.kt [완료]
+   - ToiletViewModel.kt [완료]
 7. Comment system (댓글 시스템)
    - CommentScreen.kt
    - CommentViewModel.kt

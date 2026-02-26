@@ -8,6 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,7 +30,8 @@ import com.lnk.app.ui.format.CommaVisualTransformation
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SalarySettingScreen(
-    salaryViewModel: SalaryViewModel
+    salaryViewModel: SalaryViewModel,
+    onBack: () -> Unit
 ) {
     val uiState by salaryViewModel.uiState.collectAsState()
     val setting = uiState.setting
@@ -69,12 +71,26 @@ fun SalarySettingScreen(
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
-                title = { Text("급여 설정", fontWeight = FontWeight.Bold) },
-                colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                    containerColor = Color.White
+            Column {
+                CenterAlignedTopAppBar(
+                    title = { 
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Settings, contentDescription = null, tint = Color(0xFFFBC02D), modifier = Modifier.size(20.dp))
+                            Spacer(Modifier.width(8.dp))
+                            Text("정산 설정", fontWeight = FontWeight.ExtraBold)
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBack) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "뒤로가기")
+                        }
+                    },
+                    colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+                        containerColor = Color.White
+                    )
                 )
-            )
+                Box(modifier = Modifier.fillMaxWidth().height(1.dp).background(Color(0xFFEEEEEE)))
+            }
         },
         bottomBar = {
             Surface(
@@ -101,9 +117,9 @@ fun SalarySettingScreen(
                     },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(16.dp)
+                        .padding(horizontal = 20.dp, vertical = 16.dp)
                         .height(56.dp),
-                    shape = RoundedCornerShape(12.dp),
+                    shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Color(0xFFFFC107),
                         contentColor = Color.Black
@@ -111,7 +127,7 @@ fun SalarySettingScreen(
                 ) {
                     Icon(Icons.Default.Check, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
-                    Text("설정 저장하기", fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                    Text("설정 저장하기", fontWeight = FontWeight.ExtraBold, fontSize = 16.sp)
                 }
             }
         }
@@ -122,16 +138,16 @@ fun SalarySettingScreen(
                 .background(Color(0xFFF8F8F8))
                 .verticalScroll(rememberScrollState())
                 .padding(paddingValues)
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp)
+                .padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp)
         ) {
-            SettingSection(title = "기본 급여 및 성과급", icon = Icons.Default.Info) {
+            SettingSection(title = "기본 급여 및 성과급", icon = Icons.Default.AttachMoney) {
                 NumberField("기준금(사납금)", monthlyQuota) { monthlyQuota = it }
                 DecimalField("성과급 비율 (예: 0.6)", bonusRatio) { bonusRatio = it }
                 NumberField("기본급", baseSalary) { baseSalary = it }
             }
 
-            SettingSection(title = "근태 및 수당", icon = Icons.Default.DateRange) {
+            SettingSection(title = "근태 및 수당", icon = Icons.Default.Event) {
                 NumberField("만근 기준 일수", fullAttendanceDays) { fullAttendanceDays = it }
                 NumberField("만근 기준 월 승무수당", fullAttendanceDutyAllowance) { fullAttendanceDutyAllowance = it }
                 NumberField("상여금", bonusAmount) { bonusAmount = it }
@@ -144,7 +160,7 @@ fun SalarySettingScreen(
                 NumberField("법정공휴일 인정금(1일)", holidayAllowancePerDay) { holidayAllowancePerDay = it }
             }
 
-            Spacer(modifier = Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }
@@ -155,31 +171,31 @@ fun SettingSection(
     icon: ImageVector,
     content: @Composable ColumnScope.() -> Unit
 ) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = Color(0xFFFFC107),
-                modifier = Modifier.size(20.dp)
+                tint = Color(0xFFFBC02D),
+                modifier = Modifier.size(18.dp)
             )
             Spacer(Modifier.width(8.dp))
             Text(
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold,
-                color = Color.DarkGray
+                fontWeight = FontWeight.ExtraBold,
+                color = Color(0xFF333333)
             )
         }
         Card(
             modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(16.dp),
+            shape = RoundedCornerShape(24.dp),
             colors = CardDefaults.cardColors(containerColor = Color.White),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp)
         ) {
             Column(
-                modifier = Modifier.padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+                modifier = Modifier.padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 content()
             }

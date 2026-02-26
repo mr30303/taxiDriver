@@ -40,10 +40,10 @@ class AuthViewModel(
         }
     }
 
-    fun signUp(email: String, password: String) {
+    fun signUp(email: String, password: String, nickname: String) {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true, errorMessage = null) }
-            val result = authRepository.signUp(email, password)
+            val result = authRepository.signUp(email, password, nickname)
             _uiState.update {
                 if (result.isSuccess) {
                     it.copy(isLoading = false, userId = result.getOrNull(), errorMessage = null)
